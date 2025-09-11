@@ -1,5 +1,6 @@
 ﻿global using CyberSecurity.Models;
 global using CyberSecurity.Options;
+global using CyberSecurity.Services;
 
 global using Microsoft.AspNetCore.Authentication;
 global using Microsoft.AspNetCore.Authentication.Cookies;

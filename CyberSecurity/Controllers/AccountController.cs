@@ -2,12 +2,12 @@
 
 public class AccountController : Controller
 {
-    private readonly AppDbContext context;
+    private readonly UsersService usersService;
     private readonly CustomAuthOptions authOptions;
 
-    public AccountController(AppDbContext context, IOptions<CustomAuthOptions> authOptions)
+    public AccountController(UsersService usersService, IOptions<CustomAuthOptions> authOptions)
     {
-        this.context = context;
+        this.usersService = usersService;
         this.authOptions = authOptions.Value;
 
         if (string.IsNullOrWhiteSpace(this.authOptions.Pepper))
@@ -30,7 +30,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Username == model.Username);
+        var dbUser = await usersService.GetByUsernameAsync(model.Username);
         if (dbUser == null)
         {
             ModelState.AddModelError(string.Empty, "Invalid username");
@@ -56,8 +56,7 @@ public class AccountController : Controller
         dbUser.PasswordHash = passwordHash;
         dbUser.IsPasswordInitialized = true;
 
-        context.Users.Update(dbUser);
-        await context.SaveChangesAsync();
+        await usersService.UpdateUserAndSaveAsync(dbUser);
 
         return RedirectToAction("Login");
     }
@@ -76,7 +75,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Username == model.Username);
+        var dbUser = await usersService.GetByUsernameAsync(model.Username);
         if (dbUser == null)
         {
             ModelState.AddModelError(string.Empty, "Invalid username");
@@ -108,8 +107,7 @@ public class AccountController : Controller
                     dbUser.IsBlocked = true;
                     ModelState.AddModelError(string.Empty, "Your account has been blocked due to multiple failed login attempts. Please contact the administrator.");
                 }
-                context.Users.Update(dbUser);
-                await context.SaveChangesAsync();
+                await usersService.UpdateUserAndSaveAsync(dbUser);
             }
 
             return View(model);
@@ -132,8 +130,7 @@ public class AccountController : Controller
         if (dbUser.LoginAttemptsCount > 0)
         {
             dbUser.LoginAttemptsCount = 0;
-            context.Users.Update(dbUser);
-            await context.SaveChangesAsync();
+            await usersService.UpdateUserAndSaveAsync(dbUser);
         }
 
         if (returnUrl != null && Url.IsLocalUrl(returnUrl))
@@ -172,7 +169,7 @@ public class AccountController : Controller
             return Forbid();
         }
 
-        var dbUser = await context.Users.FirstOrDefaultAsync(u => u.Username == User.Identity.Name);
+        var dbUser = await usersService.GetByUsernameAsync(User.Identity.Name);
         if (dbUser == null)
         {
             return Forbid();
@@ -187,8 +184,7 @@ public class AccountController : Controller
 
         var pepperedNew = ApplyPepper(model.NewPassword);
         dbUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(pepperedNew, authOptions.BCryptWorkFactor);
-        context.Users.Update(dbUser);
-        await context.SaveChangesAsync();
+        await usersService.UpdateUserAndSaveAsync(dbUser);
         return RedirectToAction("Index", "Home");
     }
 
