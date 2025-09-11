@@ -2,6 +2,11 @@
 
 Admin Features:
 	- Creating Users
+	- Managing Users
+
+Password:
+	- Validation
+	- Custom validation toggle
 
 Password Protection:
 	- Peppering
