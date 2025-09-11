@@ -1,4 +1,7 @@
-﻿namespace CyberSecurity.Controllers;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.Text.RegularExpressions;
+
+namespace CyberSecurity.Controllers;
 
 public class AccountController : Controller
 {
@@ -51,6 +54,12 @@ public class AccountController : Controller
 
         // TODO: Apply password validation
 
+        model.Password = model.Password.Trim();
+        if (!ValidatePassword(dbUser, model.Password, ModelState))
+        {
+            return View(model);
+        }
+
         var peppered = ApplyPepper(model.Password);
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(peppered, authOptions.BCryptWorkFactor);
         dbUser.PasswordHash = passwordHash;
@@ -94,6 +103,7 @@ public class AccountController : Controller
             return View(model);
         }
 
+        model.Password = model.Password.Trim();
         var peppered = ApplyPepper(model.Password);
         if (!BCrypt.Net.BCrypt.Verify(peppered, dbUser.PasswordHash))
         {
@@ -175,6 +185,7 @@ public class AccountController : Controller
             return Forbid();
         }
 
+        model.CurrentPassword = model.CurrentPassword.Trim();
         var pepperedCurrent = ApplyPepper(model.CurrentPassword);
         if (!BCrypt.Net.BCrypt.Verify(pepperedCurrent, dbUser.PasswordHash))
         {
@@ -182,10 +193,37 @@ public class AccountController : Controller
             return View(model);
         }
 
+        model.NewPassword = model.NewPassword.Trim();
+        if (!ValidatePassword(dbUser, model.NewPassword, ModelState))
+        {
+            return View(model);
+        }
+
         var pepperedNew = ApplyPepper(model.NewPassword);
         dbUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(pepperedNew, authOptions.BCryptWorkFactor);
         await usersService.UpdateUserAndSaveAsync(dbUser);
         return RedirectToAction("Index", "Home");
+    }
+
+    private bool ValidatePassword(User user, string password, ModelStateDictionary? modelState)
+    {
+        if (password.Length < authOptions.MinPasswordLength)
+        {
+            modelState?.AddModelError(string.Empty, $"Password must be at least {authOptions.MinPasswordLength} characters long");
+            return false;
+        }
+
+        // Custom password restrictions could be applied here
+        if (user.PasswordRestrictionsEnabled)
+        {
+            if (!Regex.IsMatch(password, "[0-9]+[.,;:-]+[0-9]+"))
+            {
+                modelState?.AddModelError(string.Empty, "Your password has a restriction to be a sequence of digits, separators and digits again");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private string ApplyPepper(string password)

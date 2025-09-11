@@ -7,4 +7,6 @@ public class CustomAuthOptions
 
     // Server-side secret used to HMAC the password before BCrypt
     public string Pepper { get; set; } = string.Empty;
+
+    public int MinPasswordLength { get; set; } = 6;
 }

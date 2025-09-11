@@ -95,4 +95,33 @@ public class AdminController : Controller
         await usersService.UpdateUserAndSaveAsync(dbUser);
         return RedirectToAction("Users");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> EnablePasswordRestrictions([FromForm] string? username)
+    {
+        return await ToggleUserPasswordRestrictions(username, true);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DisablePasswordRestrictions([FromForm] string? username)
+    {
+        return await ToggleUserPasswordRestrictions(username, false);
+    }
+
+    private async Task<IActionResult> ToggleUserPasswordRestrictions(string? username, bool enable)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return BadRequest("Username is required");
+        }
+        var dbUser = await usersService.GetByUsernameAsync(username);
+        if (dbUser == null)
+        {
+            return NotFound("User not found");
+        }
+
+        dbUser.PasswordRestrictionsEnabled = enable;
+        await usersService.UpdateUserAndSaveAsync(dbUser);
+        return RedirectToAction("Users");
+    }
 }

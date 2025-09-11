@@ -8,4 +8,5 @@ public class User
     public bool IsPasswordInitialized { get; set; }
     public int LoginAttemptsCount { get; set; }
     public bool IsBlocked { get; set; }
+    public bool PasswordRestrictionsEnabled { get; set; }
 }

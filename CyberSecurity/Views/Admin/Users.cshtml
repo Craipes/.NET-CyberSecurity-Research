@@ -8,24 +8,42 @@
 <div class="row g-3 justify-content-center">
     @foreach (var user in Model)
     {
-        <div class="col-9">
+        <div>
             <div class="rounded-3 shadow-sm p-3 bg-body-secondary">
-                <div class="row row-cols-6 fw-bold">
-                    <span class="col-3">Username</span>
-                    <span class="col">Admin?</span>
-                    <span class="col">Registered?</span>
-                    <span class="col">Login Attempts</span>
-                    <span class="col">Blocked?</span>
+                <div class="row fw-bold">
+                    <span class="col-2">Username</span>
+                    <span class="col-2">Admin?</span>
+                    <span class="col-2">Registered?</span>
+                    <span class="col-2">Login Attempts</span>
+                    <span class="col-2">Password Restriction?</span>
+                    <span class="col-2">Blocked?</span>
                 </div>
-                <div class="row row-cols-6 mt-2">
-                    <span class="col-3">@user.Username</span>
-                    <span class="col">@user.HasAdminPrivileges</span>
-                    <span class="col">@user.IsPasswordInitialized</span>
-                    <span class="col">@user.LoginAttemptsCount</span>
-                    <span class="col">@user.IsBlocked</span>
+                <div class="row mt-2">
+                    <span class="col-2">@user.Username</span>
+                    <span class="col-2">@user.HasAdminPrivileges</span>
+                    <span class="col-2">@user.IsPasswordInitialized</span>
+                    <span class="col-2">@user.LoginAttemptsCount</span>
+                    <span class="col-2">@user.PasswordRestrictionsEnabled</span>
+                    <span class="col-2">@user.IsBlocked</span>
                 </div>
-                <div class="row row-cols-6 mt-2 justify-content-end">
-                    <div class="col-3">
+                <div class="row mt-2 justify-content-end">
+                    <div class="col-2">
+                        @if (user.PasswordRestrictionsEnabled)
+                        {
+                            <form method="post" asp-action="DisablePasswordRestrictions" asp-asp-controller="Admin">
+                                <input type="hidden" name="username" value="@user.Username" />
+                                <button type="submit" class="btn btn-success w-100">Disable</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="EnablePasswordRestrictions" asp-asp-controller="Admin">
+                                <input type="hidden" name="username" value="@user.Username" />
+                                <button type="submit" class="btn btn-danger w-100">Enable</button>
+                            </form>
+                        }
+                    </div>
+                    <div class="col-2">
                         @if (user.IsBlocked)
                         {
                             <form method="post" asp-action="UnblockUser" asp-asp-controller="Admin">
