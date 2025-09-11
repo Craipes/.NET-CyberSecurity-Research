@@ -1,0 +1,8 @@
+﻿Admin Controlled Users Creation
+
+Admin Features:
+	- Creating Users
+
+Password Protection:
+	- Peppering
+	- BCrypt Hashing
