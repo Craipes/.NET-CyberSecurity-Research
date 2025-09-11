@@ -1,7 +1,4 @@
 using System.Diagnostics;
-using CyberSecurity.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace CyberSecurity.Controllers;
 

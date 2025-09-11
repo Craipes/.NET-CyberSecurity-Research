@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace CyberSecurity.Models;
+﻿namespace CyberSecurity.Models;
 
 public class ChangePasswordViewModel
 {

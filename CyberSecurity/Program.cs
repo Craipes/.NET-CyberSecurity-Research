@@ -1,9 +1,3 @@
-using CyberSecurity.Models;
-using CyberSecurity.Options;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<CustomAuthOptions>(builder.Configuration.GetSection("CustomAuthOptions"));

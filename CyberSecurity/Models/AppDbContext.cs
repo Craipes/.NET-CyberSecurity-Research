@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace CyberSecurity.Models;
+﻿namespace CyberSecurity.Models;
 
 public class AppDbContext : DbContext
 {

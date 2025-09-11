@@ -1,16 +1,4 @@
-﻿using CyberSecurity.Models;
-using CyberSecurity.Options;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-
-namespace CyberSecurity.Controllers;
+﻿namespace CyberSecurity.Controllers;
 
 public class AccountController : Controller
 {
