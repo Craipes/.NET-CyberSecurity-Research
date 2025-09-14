@@ -14,7 +14,7 @@
     </div>
     <div class="mb-3">
         <label class="form-label" asp-for=Password>Password</label>
-        <input type="password" class="form-control" asp-for=Password />
+        <input type="password" class="form-control" asp-for=Password autocomplete="off" />
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-primary">Log in</button>

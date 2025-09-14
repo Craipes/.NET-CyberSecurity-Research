@@ -45,31 +45,7 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var loggerFactory = services.GetRequiredService<ILoggerFactory>();
-    try
-    {
-        AppDbContext context = services.GetRequiredService<AppDbContext>();
-
-        if (await context.Users.FirstOrDefaultAsync(u => u.Username == "ADMIN") == null)
-        {
-            var adminUser = new User
-            {
-                Username = "ADMIN",
-                HasAdminPrivileges = true,
-                IsPasswordInitialized = false,
-                PasswordHash = string.Empty,
-                LoginAttemptsCount = 0,
-                IsBlocked = false
-            };
-            context.Users.Add(adminUser);
-            await context.SaveChangesAsync();
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = loggerFactory.CreateLogger<Program>();
-        logger.LogError(ex, "An error occurred seeding the DB.");
-    }
+    await DbSeeder.SeedAsync(services);
 }
 
 app.Run();

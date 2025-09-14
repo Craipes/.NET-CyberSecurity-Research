@@ -1,4 +1,5 @@
-﻿global using CyberSecurity.Models;
+﻿global using CyberSecurity;
+global using CyberSecurity.Models;
 global using CyberSecurity.Options;
 global using CyberSecurity.Services;
 
