@@ -7,10 +7,12 @@ public class AccountController : Controller
 {
     private readonly UsersService usersService;
     private readonly CustomAuthOptions authOptions;
+    private readonly ILogger<AccountController> logger;
 
-    public AccountController(UsersService usersService, IOptions<CustomAuthOptions> authOptions)
+    public AccountController(UsersService usersService, IOptions<CustomAuthOptions> authOptions, ILogger<AccountController> logger)
     {
         this.usersService = usersService;
+        this.logger = logger;
         this.authOptions = authOptions.Value;
 
         if (string.IsNullOrWhiteSpace(this.authOptions.Pepper))
@@ -37,26 +39,28 @@ public class AccountController : Controller
         if (dbUser == null)
         {
             ModelState.AddModelError(string.Empty, "Invalid username");
+            logger.ZLogInformation($"User tried to register with an invalid username: {model.Username}");
             return View(model);
         }
 
         if (dbUser.IsBlocked)
         {
             ModelState.AddModelError(string.Empty, "Account is blocked. Please contact the administrator.");
+            logger.ZLogInformation($"Blocked user tried to register: {model.Username}");
             return View(model);
         }
 
         if (dbUser.IsPasswordInitialized)
         {
             ModelState.AddModelError(string.Empty, "Account is already initialized. Please login");
+            logger.ZLogInformation($"User tried to register an already initialized account: {model.Username}");
             return View(model);
         }
-
-        // TODO: Apply password validation
 
         model.Password = model.Password.Trim();
         if (!ValidatePassword(dbUser, model.Password, ModelState))
         {
+            logger.ZLogInformation($"User tried to register with an invalid password: {model.Username}");
             return View(model);
         }
 
@@ -64,6 +68,8 @@ public class AccountController : Controller
         string passwordHash = BCrypt.Net.BCrypt.HashPassword(peppered, authOptions.BCryptWorkFactor);
         dbUser.PasswordHash = passwordHash;
         dbUser.IsPasswordInitialized = true;
+
+        logger.ZLogInformation($"User registered: {model.Username}");
 
         await usersService.UpdateUserAndSaveAsync(dbUser);
 
@@ -87,19 +93,22 @@ public class AccountController : Controller
         var dbUser = await usersService.GetByUsernameAsync(model.Username);
         if (dbUser == null)
         {
-            ModelState.AddModelError(string.Empty, "Invalid username");
+            ModelState.AddModelError(string.Empty, "Invalid credentials");
+            logger.ZLogInformation($"User tried to login with an invalid username: {model.Username}");
             return View(model);
         }
 
         if (dbUser.IsBlocked)
         {
             ModelState.AddModelError(string.Empty, "Your account is blocked. Please contact the administrator.");
+            logger.ZLogInformation($"Blocked user tried to login: {model.Username}");
             return View(model);
         }
 
         if (!dbUser.IsPasswordInitialized)
         {
             ModelState.AddModelError(string.Empty, "Password is not initialized. Please register first.");
+            logger.ZLogInformation($"User with uninitialized password tried to login: {model.Username}");
             return View(model);
         }
 
@@ -107,7 +116,8 @@ public class AccountController : Controller
         var peppered = ApplyPepper(model.Password);
         if (!BCrypt.Net.BCrypt.Verify(peppered, dbUser.PasswordHash))
         {
-            ModelState.AddModelError(string.Empty, "Invalid password");
+            ModelState.AddModelError(string.Empty, "Invalid credentials");
+            logger.ZLogInformation($"User tried to login with an invalid password: {model.Username}");
 
             if (!dbUser.HasAdminPrivileges)
             {
@@ -116,6 +126,7 @@ public class AccountController : Controller
                 {
                     dbUser.IsBlocked = true;
                     ModelState.AddModelError(string.Empty, "Your account has been blocked due to multiple failed login attempts. Please contact the administrator.");
+                    logger.ZLogInformation($"User account has been blocked due to multiple failed login attempts: {model.Username}");
                 }
                 await usersService.UpdateUserAndSaveAsync(dbUser);
             }
@@ -143,6 +154,8 @@ public class AccountController : Controller
             await usersService.UpdateUserAndSaveAsync(dbUser);
         }
 
+        logger.ZLogInformation($"User logged in: {model.Username}");
+
         if (returnUrl != null && Url.IsLocalUrl(returnUrl))
         {
             return LocalRedirect(returnUrl);
@@ -155,6 +168,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync();
+        logger.ZLogInformation($"User logged out: {User.Identity?.Name}");
         return RedirectToAction("Index", "Home");
     }
 
@@ -190,18 +204,23 @@ public class AccountController : Controller
         if (!BCrypt.Net.BCrypt.Verify(pepperedCurrent, dbUser.PasswordHash))
         {
             ModelState.AddModelError(string.Empty, "Invalid current password");
+            logger.ZLogInformation($"User tried to change password with an invalid current password: {dbUser.Username}");
             return View(model);
         }
 
         model.NewPassword = model.NewPassword.Trim();
         if (!ValidatePassword(dbUser, model.NewPassword, ModelState))
         {
+            logger.ZLogInformation($"User tried to change password with an invalid new password: {dbUser.Username}");
             return View(model);
         }
 
         var pepperedNew = ApplyPepper(model.NewPassword);
         dbUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(pepperedNew, authOptions.BCryptWorkFactor);
         await usersService.UpdateUserAndSaveAsync(dbUser);
+
+        logger.ZLogInformation($"User changed password: {dbUser.Username}");
+
         return RedirectToAction("Index", "Home");
     }
 

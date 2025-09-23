@@ -11,3 +11,8 @@ Password:
 Password Protection:
 	- Peppering
 	- BCrypt Hashing
+
+Logging:
+	- Login Attempts
+	- Password Changes
+	- User Creations

@@ -4,10 +4,12 @@
 public class AdminController : Controller
 {
     private readonly UsersService usersService;
+    private readonly ILogger<AdminController> logger;
 
-    public AdminController(UsersService usersService)
+    public AdminController(UsersService usersService, ILogger<AdminController> logger)
     {
         this.usersService = usersService;
+        this.logger = logger;
     }
 
     public async Task<IActionResult> Users()
@@ -33,12 +35,14 @@ public class AdminController : Controller
         if (model.Username != null && model.Username.Any(char.IsWhiteSpace))
         {
             ModelState.AddModelError(string.Empty, "Username must not contain white space characters");
+            logger.ZLogTrace($"Admin tried to add a user with whitespace in the username");
             return View(model);
         }
 
         if (string.IsNullOrWhiteSpace(model.Username) || model.Username.Length < 3 || model.Username.Length > 24)
         {
             ModelState.AddModelError(string.Empty, "Username must be 3-24 characters long");
+            logger.ZLogTrace($"Admin tried to add a user with an invalid username length");
             return View(model);
         }
 
@@ -46,6 +50,7 @@ public class AdminController : Controller
         if (dbUser != null)
         {
             ModelState.AddModelError(string.Empty, "Username is already taken");
+            logger.ZLogTrace($"Admin tried to add a user with an already taken username: {model.Username}");
             return View(model);
         }
 
@@ -55,6 +60,7 @@ public class AdminController : Controller
         };
 
         await usersService.AddUserAndSaveAsync(newUser);
+        logger.ZLogInformation($"Admin added a new user: {newUser.Username}");
         return RedirectToAction("Users");
     }
 
@@ -74,25 +80,30 @@ public class AdminController : Controller
     {
         if (string.IsNullOrWhiteSpace(username))
         {
+            logger.ZLogTrace($"Admin tried to block/unblock a user without providing a username");
             return BadRequest("Username is required");
         }
 
         var dbUser = await usersService.GetByUsernameAsync(username);
         if (dbUser == null)
         {
+            logger.ZLogTrace($"Admin tried to block/unblock a non-existing user: {username}");
             return NotFound("User not found");
         }
         if (dbUser.Username == User.Identity?.Name)
         {
+            logger.ZLogTrace($"Admin tried to block/unblock their own account: {dbUser.Username}");
             return BadRequest("You cannot block/unblock your own account");
         }
         if (dbUser.HasAdminPrivileges)
         {
+            logger.ZLogTrace($"Admin tried to block/unblock another admin account: {dbUser.Username}");
             return BadRequest("You cannot block/unblock an admin account");
         }
 
         dbUser.IsBlocked = block;
         await usersService.UpdateUserAndSaveAsync(dbUser);
+        logger.ZLogInformation($"Admin {(block ? "blocked" : "unblocked")} user: {dbUser.Username}");
         return RedirectToAction("Users");
     }
 
@@ -112,16 +123,19 @@ public class AdminController : Controller
     {
         if (string.IsNullOrWhiteSpace(username))
         {
+            logger.ZLogTrace($"Admin tried to enable/disable password restrictions without providing a username");
             return BadRequest("Username is required");
         }
         var dbUser = await usersService.GetByUsernameAsync(username);
         if (dbUser == null)
         {
+            logger.ZLogTrace($"Admin tried to enable/disable password restrictions for a non-existing user: {username}");
             return NotFound("User not found");
         }
 
         dbUser.PasswordRestrictionsEnabled = enable;
         await usersService.UpdateUserAndSaveAsync(dbUser);
+        logger.ZLogInformation($"Admin {(enable ? "enabled" : "disabled")} password restrictions for user: {dbUser.Username}");
         return RedirectToAction("Users");
     }
 }

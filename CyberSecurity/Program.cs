@@ -1,5 +1,26 @@
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging
+    .ClearProviders()
+    .AddZLoggerConsole(options =>
+    {
+        options.UsePlainTextFormatter(formatter =>
+        {
+            formatter.SetPrefixFormatter($"[{0}|{1}|{2}] ", (in MessageTemplate template, in LogInfo info) => template.Format(info.Timestamp, info.Category, info.LogLevel));
+            formatter.SetExceptionFormatter((writer, ex) => Utf8StringInterpolation.Utf8String.Format(writer, $"{ex.Message}"));
+        });
+    })
+    .AddZLoggerRollingFile(options =>
+    {
+        options.FilePathSelector = (dt, index) => $"Logs/{dt:yyyy-MM-dd}_{index}.log";
+        options.RollingSizeKB = 1024 * 5;
+        options.UsePlainTextFormatter(formatter =>
+        {
+            formatter.SetPrefixFormatter($"[{0}|{1}|{2}] ", (in MessageTemplate template, in LogInfo info) => template.Format(info.Timestamp, info.Category, info.LogLevel));
+            formatter.SetExceptionFormatter((writer, ex) => Utf8StringInterpolation.Utf8String.Format(writer, $"{ex.Message}"));
+        });
+    });
+
 builder.Services.Configure<CustomAuthOptions>(builder.Configuration.GetSection("CustomAuthOptions"));
 
 // Add services to the container.
