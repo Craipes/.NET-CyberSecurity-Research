@@ -50,7 +50,7 @@ public class AdminController : Controller
         if (dbUser != null)
         {
             ModelState.AddModelError(string.Empty, "Username is already taken");
-            logger.ZLogTrace($"Admin tried to add a user with an already taken username: {model.Username}");
+            logger.ZLogTrace($"Admin tried to add a user with an already taken username");
             return View(model);
         }
 
@@ -60,7 +60,7 @@ public class AdminController : Controller
         };
 
         await usersService.AddUserAndSaveAsync(newUser);
-        logger.ZLogInformation($"Admin added a new user: {newUser.Username}");
+        logger.ZLogInformation($"Admin added a new user: {newUser.Id}");
         return RedirectToAction("Users");
     }
 
@@ -92,18 +92,18 @@ public class AdminController : Controller
         }
         if (dbUser.Username == User.Identity?.Name)
         {
-            logger.ZLogTrace($"Admin tried to block/unblock their own account: {dbUser.Username}");
+            logger.ZLogTrace($"Admin tried to block/unblock their own account");
             return BadRequest("You cannot block/unblock your own account");
         }
         if (dbUser.HasAdminPrivileges)
         {
-            logger.ZLogTrace($"Admin tried to block/unblock another admin account: {dbUser.Username}");
+            logger.ZLogTrace($"Admin tried to block/unblock another admin account: {dbUser.Id}");
             return BadRequest("You cannot block/unblock an admin account");
         }
 
         dbUser.IsBlocked = block;
         await usersService.UpdateUserAndSaveAsync(dbUser);
-        logger.ZLogInformation($"Admin {(block ? "blocked" : "unblocked")} user: {dbUser.Username}");
+        logger.ZLogInformation($"Admin {(block ? "blocked" : "unblocked")} user: {dbUser.Id}");
         return RedirectToAction("Users");
     }
 
@@ -135,7 +135,7 @@ public class AdminController : Controller
 
         dbUser.PasswordRestrictionsEnabled = enable;
         await usersService.UpdateUserAndSaveAsync(dbUser);
-        logger.ZLogInformation($"Admin {(enable ? "enabled" : "disabled")} password restrictions for user: {dbUser.Username}");
+        logger.ZLogInformation($"Admin {(enable ? "enabled" : "disabled")} password restrictions for user: {dbUser.Id}");
         return RedirectToAction("Users");
     }
 }

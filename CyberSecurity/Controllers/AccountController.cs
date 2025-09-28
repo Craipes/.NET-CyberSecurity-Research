@@ -46,21 +46,21 @@ public class AccountController : Controller
         if (dbUser.IsBlocked)
         {
             ModelState.AddModelError(string.Empty, "Account is blocked. Please contact the administrator.");
-            logger.ZLogInformation($"Blocked user tried to register: {model.Username}");
+            logger.ZLogInformation($"Blocked user has tried to register: {dbUser.Id}");
             return View(model);
         }
 
         if (dbUser.IsPasswordInitialized)
         {
             ModelState.AddModelError(string.Empty, "Account is already initialized. Please login");
-            logger.ZLogInformation($"User tried to register an already initialized account: {model.Username}");
+            logger.ZLogInformation($"User has tried to register an already initialized account: {dbUser.Id}");
             return View(model);
         }
 
         model.Password = model.Password.Trim();
         if (!ValidatePassword(dbUser, model.Password, ModelState))
         {
-            logger.ZLogInformation($"User tried to register with an invalid password: {model.Username}");
+            logger.ZLogInformation($"User has tried to register with an invalid password: {dbUser.Id}");
             return View(model);
         }
 
@@ -69,7 +69,7 @@ public class AccountController : Controller
         dbUser.PasswordHash = passwordHash;
         dbUser.IsPasswordInitialized = true;
 
-        logger.ZLogInformation($"User registered: {model.Username}");
+        logger.ZLogInformation($"User registered: {dbUser.Id}");
 
         await usersService.UpdateUserAndSaveAsync(dbUser);
 
@@ -101,14 +101,14 @@ public class AccountController : Controller
         if (dbUser.IsBlocked)
         {
             ModelState.AddModelError(string.Empty, "Your account is blocked. Please contact the administrator.");
-            logger.ZLogInformation($"Blocked user tried to login: {model.Username}");
+            logger.ZLogInformation($"Blocked user tried to login: {dbUser.Id}");
             return View(model);
         }
 
         if (!dbUser.IsPasswordInitialized)
         {
             ModelState.AddModelError(string.Empty, "Password is not initialized. Please register first.");
-            logger.ZLogInformation($"User with uninitialized password tried to login: {model.Username}");
+            logger.ZLogInformation($"User with uninitialized password tried to login: {dbUser.Id}");
             return View(model);
         }
 
@@ -117,7 +117,7 @@ public class AccountController : Controller
         if (!BCrypt.Net.BCrypt.Verify(peppered, dbUser.PasswordHash))
         {
             ModelState.AddModelError(string.Empty, "Invalid credentials");
-            logger.ZLogInformation($"User tried to login with an invalid password: {model.Username}");
+            logger.ZLogInformation($"User tried to login with an invalid password: {dbUser.Id}");
 
             if (!dbUser.HasAdminPrivileges)
             {
@@ -126,7 +126,7 @@ public class AccountController : Controller
                 {
                     dbUser.IsBlocked = true;
                     ModelState.AddModelError(string.Empty, "Your account has been blocked due to multiple failed login attempts. Please contact the administrator.");
-                    logger.ZLogInformation($"User account has been blocked due to multiple failed login attempts: {model.Username}");
+                    logger.ZLogInformation($"User account has been blocked due to multiple failed login attempts: {dbUser.Id}");
                 }
                 await usersService.UpdateUserAndSaveAsync(dbUser);
             }
@@ -136,6 +136,7 @@ public class AccountController : Controller
 
         var claims = new List<Claim>
         {
+            new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
             new Claim(ClaimTypes.Name, model.Username)
         };
 
@@ -154,7 +155,7 @@ public class AccountController : Controller
             await usersService.UpdateUserAndSaveAsync(dbUser);
         }
 
-        logger.ZLogInformation($"User logged in: {model.Username}");
+        logger.ZLogInformation($"User logged in: {dbUser.Id}");
 
         if (returnUrl != null && Url.IsLocalUrl(returnUrl))
         {
@@ -168,7 +169,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync();
-        logger.ZLogInformation($"User logged out: {User.Identity?.Name}");
+        logger.ZLogInformation($"User logged out: {User.FindFirstValue(ClaimTypes.NameIdentifier)}");
         return RedirectToAction("Index", "Home");
     }
 
@@ -204,14 +205,14 @@ public class AccountController : Controller
         if (!BCrypt.Net.BCrypt.Verify(pepperedCurrent, dbUser.PasswordHash))
         {
             ModelState.AddModelError(string.Empty, "Invalid current password");
-            logger.ZLogInformation($"User tried to change password with an invalid current password: {dbUser.Username}");
+            logger.ZLogInformation($"User tried to change password with an invalid current password: {dbUser.Id}");
             return View(model);
         }
 
         model.NewPassword = model.NewPassword.Trim();
         if (!ValidatePassword(dbUser, model.NewPassword, ModelState))
         {
-            logger.ZLogInformation($"User tried to change password with an invalid new password: {dbUser.Username}");
+            logger.ZLogInformation($"User tried to change password with an invalid new password: {dbUser.Id}");
             return View(model);
         }
 
@@ -219,7 +220,7 @@ public class AccountController : Controller
         dbUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(pepperedNew, authOptions.BCryptWorkFactor);
         await usersService.UpdateUserAndSaveAsync(dbUser);
 
-        logger.ZLogInformation($"User changed password: {dbUser.Username}");
+        logger.ZLogInformation($"User changed password: {dbUser.Id}");
 
         return RedirectToAction("Index", "Home");
     }
