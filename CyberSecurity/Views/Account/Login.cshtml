@@ -7,6 +7,36 @@
 
 <form method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        @if (ViewBag.CaptchaGrid is char[,] grid)
+        {
+            <div>
+                @for (var r = 0; r < grid.GetLength(0); r++)
+                {
+                    <div class="text-center d-flex justify-content-center">
+                        @for (var c = 0; c < grid.GetLength(1); c++)
+                        {
+                            <div class="fw-bold d-inline-block border-1 border" style="width:2rem;height:2rem;padding:.25rem;">@grid[r, c]</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-muted">Captcha grid unavailable.</div>
+        }
+    </div>
+
+    <input type="hidden" asp-for="CaptchaEncryptedSeed" value="@ViewBag.CaptchaEncryptedSeed" />
+
+    <div class="mb-3">
+        <label class="form-label" asp-for=CaptchaResult>Found words</label>
+        <textarea class="form-control" asp-for=CaptchaResult></textarea>
+        <span asp-validation-for="CaptchaResult" class="text-danger"></span>
+    </div>
+
     <div class="mb-3">
         <label class="form-label" asp-for=Username>Username</label>
         <input class="form-control" asp-for=Username />

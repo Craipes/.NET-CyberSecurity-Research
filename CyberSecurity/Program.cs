@@ -1,3 +1,5 @@
+using WordsCaptcha;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging
@@ -22,6 +24,7 @@ builder.Logging
     });
 
 builder.Services.Configure<CustomAuthOptions>(builder.Configuration.GetSection("CustomAuthOptions"));
+builder.Services.Configure<WordSearchCaptchaOptions>(builder.Configuration.GetSection("WordSearchCaptchaOptions"));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -38,7 +41,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+builder.Services.AddDataProtection();
 builder.Services.AddScoped<UsersService>();
+builder.Services.AddScoped<WordsCaptchaService>();
 
 var app = builder.Build();
 

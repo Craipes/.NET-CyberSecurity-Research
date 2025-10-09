@@ -8,12 +8,14 @@ public class AccountController : Controller
     private readonly UsersService usersService;
     private readonly CustomAuthOptions authOptions;
     private readonly ILogger<AccountController> logger;
+    private readonly WordsCaptchaService wordsCaptchaService;
 
-    public AccountController(UsersService usersService, IOptions<CustomAuthOptions> authOptions, ILogger<AccountController> logger)
+    public AccountController(UsersService usersService, IOptions<CustomAuthOptions> authOptions, ILogger<AccountController> logger, WordsCaptchaService wordsCaptchaService)
     {
         this.usersService = usersService;
         this.logger = logger;
         this.authOptions = authOptions.Value;
+        this.wordsCaptchaService = wordsCaptchaService;
 
         if (string.IsNullOrWhiteSpace(this.authOptions.Pepper))
         {
@@ -24,14 +26,28 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Register()
     {
+        SetNewCaptchaInViewBag();
         return View();
     }
 
     [HttpPost]
     public async Task<IActionResult> Register([FromForm] RegisterViewModel model)
     {
+        var captchaResult = model.CaptchaResult;
+        model.CaptchaResult = string.Empty;
+        ModelState.Remove(nameof(RegisterViewModel.CaptchaResult));
+
         if (!ModelState.IsValid)
         {
+            SetNewCaptchaInViewBag();
+            return View(model);
+        }
+
+        if (!wordsCaptchaService.ValidateCaptcha(model.CaptchaEncryptedSeed, captchaResult.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)))
+        {
+            ModelState.AddModelError((RegisterViewModel m) => m.CaptchaResult, "Invalid captcha");
+            logger.ZLogInformation($"User tried to register with an invalid captcha: {model.Username}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -40,6 +56,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, "Invalid username");
             logger.ZLogInformation($"User tried to register with an invalid username: {model.Username}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -47,6 +64,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, "Account is blocked. Please contact the administrator.");
             logger.ZLogInformation($"Blocked user has tried to register: {dbUser.Id}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -54,6 +72,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, "Account is already initialized. Please login");
             logger.ZLogInformation($"User has tried to register an already initialized account: {dbUser.Id}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -61,6 +80,7 @@ public class AccountController : Controller
         if (!ValidatePassword(dbUser, model.Password, ModelState))
         {
             logger.ZLogInformation($"User has tried to register with an invalid password: {dbUser.Id}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -79,14 +99,28 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Login()
     {
+        SetNewCaptchaInViewBag();
         return View();
     }
 
     [HttpPost]
     public async Task<IActionResult> Login([FromForm] LoginViewModel model, string? returnUrl = null)
     {
+        var captchaResult = model.CaptchaResult;
+        model.CaptchaResult = string.Empty;
+        ModelState.Remove(nameof(LoginViewModel.CaptchaResult));
+
         if (!ModelState.IsValid)
         {
+            SetNewCaptchaInViewBag();
+            return View(model);
+        }
+
+        if (!wordsCaptchaService.ValidateCaptcha(model.CaptchaEncryptedSeed, captchaResult.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)))
+        {
+            ModelState.AddModelError((RegisterViewModel m) => m.CaptchaResult, "Invalid captcha");
+            logger.ZLogInformation($"User tried to register with an invalid captcha: {model.Username}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -95,6 +129,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, "Invalid credentials");
             logger.ZLogInformation($"User tried to login with an invalid username: {model.Username}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -102,6 +137,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, "Your account is blocked. Please contact the administrator.");
             logger.ZLogInformation($"Blocked user tried to login: {dbUser.Id}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -109,6 +145,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(string.Empty, "Password is not initialized. Please register first.");
             logger.ZLogInformation($"User with uninitialized password tried to login: {dbUser.Id}");
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -131,6 +168,7 @@ public class AccountController : Controller
                 await usersService.UpdateUserAndSaveAsync(dbUser);
             }
 
+            SetNewCaptchaInViewBag();
             return View(model);
         }
 
@@ -253,5 +291,12 @@ public class AccountController : Controller
         using var hmac = new HMACSHA256(key);
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(hash);
+    }
+
+    private void SetNewCaptchaInViewBag()
+    {
+        var (grid, encryptedSeed) = wordsCaptchaService.GenerateCaptcha();
+        ViewBag.CaptchaGrid = grid;
+        ViewBag.CaptchaEncryptedSeed = encryptedSeed;
     }
 }
