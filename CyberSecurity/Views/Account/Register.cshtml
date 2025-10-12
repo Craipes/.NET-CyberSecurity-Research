@@ -8,6 +8,7 @@
 <form method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
+    <h4 class="text-center">CAPTCHA (find words in rows or columns of the matrix)</h4>
     <div class="mb-3">
         @if (ViewBag.CaptchaGrid is char[,] grid)
         {
@@ -32,10 +33,12 @@
     <input type="hidden" asp-for="CaptchaEncryptedSeed" value="@ViewBag.CaptchaEncryptedSeed" />
     
     <div class="mb-3">
-        <label class="form-label" asp-for=CaptchaResult>Found words</label>
+        <label class="form-label" asp-for=CaptchaResult>Found words (minimum 3, separated by new line)</label>
         <textarea class="form-control" asp-for=CaptchaResult></textarea>
         <span asp-validation-for="CaptchaResult" class="text-danger"></span>
     </div>
+
+    <hr />
 
     <div class="mb-3">
         <label class="form-label" asp-for=Username>Username</label>
