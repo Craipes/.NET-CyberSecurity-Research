@@ -1,0 +1,54 @@
+@model CyberSecurity.Models.RsaViewModel
+
+@{
+    ViewData["Title"] = "RSA Шифрування";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="row">
+    <div class="col-md-12">
+        <h4>Публічний ключ</h4>
+        <textarea class="form-control" rows="5" readonly>@Model.PublicKey</textarea>
+    </div>
+</div>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <h4>Шифрування</h4>
+        <form asp-action="Encrypt" method="post">
+            <div class="form-group">
+                <label asp-for="OriginalText">Текст для шифрування:</label>
+                <textarea asp-for="OriginalText" class="form-control" rows="4"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Зашифрувати</button>
+            @if (!string.IsNullOrEmpty(Model.EncryptedText))
+            {
+                <div class="mt-3">
+                    <label asp-for="EncryptedText">Зашифрований текст (Base64):</label>
+                    <textarea asp-for="EncryptedText" class="form-control" rows="4" readonly></textarea>
+                </div>
+            }
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Дешифрування</h4>
+        <form asp-action="Decrypt" method="post">
+            <div class="form-group">
+                <label asp-for="EncryptedTextToDecrypt">Текст для дешифрування (Base64):</label>
+                <textarea asp-for="EncryptedTextToDecrypt" class="form-control" rows="4"></textarea>
+            </div>
+            <button type="submit" class="btn btn-success mt-2">Дешифрувати</button>
+            @if (!string.IsNullOrEmpty(Model.DecryptedText))
+            {
+                <div class="mt-3">
+                    <label asp-for="DecryptedText">Дешифрований текст:</label>
+                    <textarea asp-for="DecryptedText" class="form-control" rows="4" readonly></textarea>
+                </div>
+            }
+        </form>
+    </div>
+</div>
