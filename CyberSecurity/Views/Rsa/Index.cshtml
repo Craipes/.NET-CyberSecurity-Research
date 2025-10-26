@@ -1,14 +1,15 @@
 @model CyberSecurity.Models.RsaViewModel
 
 @{
-    ViewData["Title"] = "RSA Шифрування";
+    ViewData["Title"] = "RSA, Hashing, and Digital Signatures";
 }
 
 <h2>@ViewData["Title"]</h2>
 
 <div class="row">
     <div class="col-md-12">
-        <h4>Публічний ключ</h4>
+        <h4>Public Key</h4>
+        <p>This key is used for encryption and signature verification.</p>
         <textarea class="form-control" rows="5" readonly>@Model.PublicKey</textarea>
     </div>
 </div>
@@ -17,17 +18,17 @@
 
 <div class="row">
     <div class="col-md-6">
-        <h4>Шифрування</h4>
+        <h4>Encrypt</h4>
         <form asp-action="Encrypt" method="post">
             <div class="form-group">
-                <label asp-for="OriginalText">Текст для шифрування:</label>
+                <label asp-for="OriginalText">Text to Encrypt:</label>
                 <textarea asp-for="OriginalText" class="form-control" rows="4"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary mt-2">Зашифрувати</button>
+            <button type="submit" class="btn btn-primary mt-2">Encrypt</button>
             @if (!string.IsNullOrEmpty(Model.EncryptedText))
             {
                 <div class="mt-3">
-                    <label asp-for="EncryptedText">Зашифрований текст (Base64):</label>
+                    <label asp-for="EncryptedText">Encrypted Text (Base64):</label>
                     <textarea asp-for="EncryptedText" class="form-control" rows="4" readonly></textarea>
                 </div>
             }
@@ -35,18 +36,84 @@
     </div>
 
     <div class="col-md-6">
-        <h4>Дешифрування</h4>
+        <h4>Decrypt</h4>
         <form asp-action="Decrypt" method="post">
             <div class="form-group">
-                <label asp-for="EncryptedTextToDecrypt">Текст для дешифрування (Base64):</label>
+                <label asp-for="EncryptedTextToDecrypt">Text to Decrypt (Base64):</label>
                 <textarea asp-for="EncryptedTextToDecrypt" class="form-control" rows="4"></textarea>
             </div>
-            <button type="submit" class="btn btn-success mt-2">Дешифрувати</button>
+            <button type="submit" class="btn btn-success mt-2">Decrypt</button>
             @if (!string.IsNullOrEmpty(Model.DecryptedText))
             {
                 <div class="mt-3">
-                    <label asp-for="DecryptedText">Дешифрований текст:</label>
+                    <label asp-for="DecryptedText">Decrypted Text:</label>
                     <textarea asp-for="DecryptedText" class="form-control" rows="4" readonly></textarea>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<hr />
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>MD5 Hashing</h4>
+        <form asp-action="HashText" method="post">
+            <div class="form-group">
+                <label asp-for="TextToHash">Text to Hash:</label>
+                <textarea asp-for="TextToHash" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-info mt-2">Generate MD5 Hash</button>
+            @if (!string.IsNullOrEmpty(Model.HashedText))
+            {
+                <div class="mt-3">
+                    <label asp-for="HashedText">MD5 Hash (Hex):</label>
+                    <input asp-for="HashedText" class="form-control" readonly />
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<hr />
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h4>Create Digital Signature</h4>
+        <form asp-action="Sign" method="post">
+            <div class="form-group">
+                <label asp-for="TextToSign">Message to Sign:</label>
+                <textarea asp-for="TextToSign" class="form-control" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-dark mt-2">Sign</button>
+            @if (!string.IsNullOrEmpty(Model.DigitalSignature))
+            {
+                <div class="mt-3">
+                    <label asp-for="DigitalSignature">Digital Signature (Base64):</label>
+                    <textarea asp-for="DigitalSignature" class="form-control" rows="3" readonly></textarea>
+                </div>
+            }
+        </form>
+    </div>
+
+    <div class="col-md-6">
+        <h4>Verify Digital Signature</h4>
+        <form asp-action="Verify" method="post">
+            <div class="form-group">
+                <label asp-for="TextToVerify">Original Message:</label>
+                <textarea asp-for="TextToVerify" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-group mt-2">
+                <label asp-for="SignatureToVerify">Signature to Verify (Base64):</label>
+                <textarea asp-for="SignatureToVerify" class="form-control" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-warning mt-2">Verify</button>
+            @if (!string.IsNullOrEmpty(Model.VerificationResult))
+            {
+                <div class="mt-3">
+                    <label asp-for="VerificationResult">Verification Result:</label>
+                    <input asp-for="VerificationResult" class="form-control" readonly />
                 </div>
             }
         </form>
