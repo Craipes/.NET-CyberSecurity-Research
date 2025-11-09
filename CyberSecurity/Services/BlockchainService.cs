@@ -1,9 +1,15 @@
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
 namespace CyberSecurity.Services;
 
 public class BlockchainService
 {
     private readonly AppDbContext _context;
     private readonly int _difficulty;
+    private static CancellationTokenSource _cancellationTokenSource = new();
 
     public BlockchainService(AppDbContext context, IOptions<BlockchainOptions> options)
     {
@@ -18,34 +24,65 @@ public class BlockchainService
 
     public async Task AddBlockAsync(string message, string username)
     {
-        var lastBlock = await _context.Blocks.OrderByDescending(b => b.Id).FirstOrDefaultAsync();
-        var previousHash = lastBlock?.Hash ?? "0";
-
-        var newBlock = new Block
+        while (true)
         {
-            Timestamp = DateTime.UtcNow,
-            Message = message,
-            Username = username,
-            PreviousHash = previousHash
-        };
+            var lastBlock = await _context.Blocks.OrderByDescending(b => b.Id).FirstOrDefaultAsync();
+            var previousHash = lastBlock?.Hash ?? "0";
 
-        await Task.Run(() => MineBlock(newBlock));
+            var newBlock = new Block
+            {
+                Timestamp = DateTime.UtcNow,
+                Message = message,
+                Username = username,
+                PreviousHash = previousHash
+            };
 
-        _context.Blocks.Add(newBlock);
-        await _context.SaveChangesAsync();
+            var miningTask = Task.Run(() => MineBlock(newBlock, _cancellationTokenSource.Token));
+
+            try
+            {
+                await miningTask;
+
+                if (miningTask.Result) // Mining was successful
+                {
+                    // Brief moment of concurrency risk. A lock could be used for higher-volume scenarios.
+                    var currentLastBlock = await _context.Blocks.OrderByDescending(b => b.Id).FirstOrDefaultAsync();
+                    if (currentLastBlock?.Hash == newBlock.PreviousHash)
+                    {
+                        _context.Blocks.Add(newBlock);
+                        await _context.SaveChangesAsync();
+
+                        // Signal other mining tasks to restart and create a new CTS for subsequent tasks.
+                        _cancellationTokenSource.Cancel();
+                        _cancellationTokenSource = new CancellationTokenSource();
+                        return; // Block added, exit the loop.
+                    }
+                }
+                // If mining was cancelled or another block was added first, the loop will restart.
+            }
+            catch (OperationCanceledException)
+            {
+                // This is expected if another block was mined. The loop will continue, restarting the process.
+            }
+        }
     }
 
-    private void MineBlock(Block block)
+    private bool MineBlock(Block block, CancellationToken token)
     {
         var prefix = new string('0', _difficulty);
         do
         {
+            if (token.IsCancellationRequested)
+            {
+                return false; // Mining was cancelled
+            }
             block.Nonce++;
             block.Hash = CalculateHash(block);
         } while (!block.Hash.StartsWith(prefix));
+        return true; // Mining succeeded
     }
 
-    private static string CalculateHash(Block block)
+    private string CalculateHash(Block block)
     {
         var input = $"{block.Timestamp}-{block.PreviousHash}-{block.Message}-{block.Username}-{block.Nonce}";
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
@@ -54,7 +91,7 @@ public class BlockchainService
 
     public async Task EnsureGenesisBlockAsync()
     {
-        if (!_context.Blocks.Any())
+        if (!await _context.Blocks.AnyAsync())
         {
             var genesisBlock = new Block
             {
@@ -64,9 +101,8 @@ public class BlockchainService
                 PreviousHash = "0",
                 Nonce = 0
             };
-            genesisBlock.Hash = CalculateHash(genesisBlock);
             
-            MineBlock(genesisBlock);
+            MineBlock(genesisBlock, CancellationToken.None);
 
             _context.Blocks.Add(genesisBlock);
             await _context.SaveChangesAsync();
