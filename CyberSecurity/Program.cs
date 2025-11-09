@@ -25,6 +25,7 @@ builder.Logging
 
 builder.Services.Configure<CustomAuthOptions>(builder.Configuration.GetSection("CustomAuthOptions"));
 builder.Services.Configure<WordSearchCaptchaOptions>(builder.Configuration.GetSection("WordSearchCaptchaOptions"));
+builder.Services.Configure<BlockchainOptions>(builder.Configuration.GetSection("BlockchainOptions"));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -44,6 +45,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddDataProtection();
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<WordsCaptchaService>();
+builder.Services.AddScoped<BlockchainService>();
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -82,6 +84,8 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     await DbSeeder.SeedAsync(services);
+    var blockchainService = services.GetRequiredService<BlockchainService>();
+    await blockchainService.EnsureGenesisBlockAsync();
 }
 
 app.Run();

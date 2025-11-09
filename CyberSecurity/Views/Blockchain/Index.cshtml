@@ -1,0 +1,63 @@
+@model CyberSecurity.Models.BlockchainViewModel
+
+@{
+    ViewData["Title"] = "Blockchain";
+}
+
+<h2>Blockchain</h2>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>Add New Block</h3>
+        <form asp-action="AddBlock" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-group mb-2">
+                <label asp-for="AddBlock.NewMessage">New Message</label>
+                <input asp-for="AddBlock.NewMessage" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Add Block</button>
+        </form>
+    </div>
+</div>
+
+<hr />
+
+<h3>Blockchain Explorer</h3>
+
+@if (Model.Chain == null || !Model.Chain.Any())
+{
+    <p>No blocks in the blockchain.</p>
+}
+else
+{
+    <p>Total Blocks: @Model.Chain.Count()</p>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Timestamp</th>
+                    <th>Message</th>
+                    <th>Username</th>
+                    <th>Nonce</th>
+                    <th>Hash</th>
+                    <th>Previous Hash</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var block in Model.Chain.OrderByDescending(n => n.Id))
+                {
+                    <tr>
+                        <td>@block.Id</td>
+                        <td>@block.Timestamp</td>
+                        <td>@block.Message</td>
+                        <td>@block.Username</td>
+                        <td>@block.Nonce</td>
+                        <td style="word-break:break-all;">@block.Hash</td>
+                        <td style="word-break:break-all;">@block.PreviousHash</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
