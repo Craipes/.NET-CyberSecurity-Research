@@ -37,6 +37,8 @@ public class BlockchainService
                 PreviousHash = previousHash
             };
 
+            newBlock.MdcHash = CalculateMdcHash(newBlock);
+
             var miningTask = Task.Run(() => MineBlock(newBlock, _cancellationTokenSource.Token));
 
             try
@@ -82,9 +84,16 @@ public class BlockchainService
         return true; // Mining succeeded
     }
 
-    private string CalculateHash(Block block)
+    private static string CalculateMdcHash(Block block)
     {
-        var input = $"{block.Timestamp}-{block.PreviousHash}-{block.Message}-{block.Username}-{block.Nonce}";
+        var input = $"{block.Timestamp}-{block.PreviousHash}-{block.Message}-{block.Username}";
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexString(bytes);
+    }
+
+    private static string CalculateHash(Block block)
+    {
+        var input = $"{block.MdcHash}-{block.Nonce}";
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(bytes);
     }
@@ -101,6 +110,8 @@ public class BlockchainService
                 PreviousHash = "0",
                 Nonce = 0
             };
+
+            genesisBlock.MdcHash = CalculateMdcHash(genesisBlock);
             
             MineBlock(genesisBlock, CancellationToken.None);
 

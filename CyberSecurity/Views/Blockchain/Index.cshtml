@@ -40,8 +40,9 @@ else
                     <th>Message</th>
                     <th>Username</th>
                     <th>Nonce</th>
-                    <th>Hash</th>
                     <th>Previous Hash</th>
+                    <th>MDC Hash</th>
+                    <th>Hash</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,8 +54,9 @@ else
                         <td>@block.Message</td>
                         <td>@block.Username</td>
                         <td>@block.Nonce</td>
-                        <td style="word-break:break-all;">@block.Hash</td>
                         <td style="word-break:break-all;">@block.PreviousHash</td>
+                        <td style="word-break:break-all;">@block.MdcHash</td>
+                        <td style="word-break:break-all;">@block.Hash</td>
                     </tr>
                 }
             </tbody>

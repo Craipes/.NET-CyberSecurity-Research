@@ -20,5 +20,8 @@ public class Block
     public string Hash { get; set; } = string.Empty;
 
     [Required]
+    public string MdcHash { get; set; } = string.Empty;
+
+    [Required]
     public string PreviousHash { get; set; } = string.Empty;
 }
