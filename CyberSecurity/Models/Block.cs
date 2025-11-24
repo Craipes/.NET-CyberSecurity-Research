@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace CyberSecurity.Models;
 
 public class Block
@@ -24,4 +26,7 @@ public class Block
 
     [Required]
     public string PreviousHash { get; set; } = string.Empty;
+
+    [NotMapped]
+    public bool IsValid { get; set; }
 }

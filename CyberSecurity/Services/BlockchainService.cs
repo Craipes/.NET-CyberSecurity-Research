@@ -19,7 +19,9 @@ public class BlockchainService
 
     public async Task<List<Block>> GetChainAsync()
     {
-        return await _context.Blocks.OrderBy(b => b.Id).ToListAsync();
+        var chain = await _context.Blocks.OrderBy(b => b.Id).ToListAsync();
+        await ValidateChainAsync(chain);
+        return chain;
     }
 
     public async Task AddBlockAsync(string message, string username)
@@ -67,6 +69,41 @@ public class BlockchainService
                 // This is expected if another block was mined. The loop will continue, restarting the process.
             }
         }
+    }
+
+    public async Task ValidateChainAsync(List<Block> chain)
+    {
+        var prefix = new string('0', _difficulty);
+        Block? previousBlock = null;
+
+        foreach (var block in chain)
+        {
+            ValidateBlock(block, previousBlock, prefix);
+            previousBlock = block;
+        }
+
+        await Task.CompletedTask; // To make the method async as per its name
+    }
+
+    private static void ValidateBlock(Block block, Block? previousBlock, string prefix)
+    {
+        var mdcHashIsValid = CalculateMdcHash(block) == block.MdcHash;
+        var hashIsValid = CalculateHash(block) == block.Hash;
+        var hashMeetsDifficulty = block.Hash.StartsWith(prefix);
+
+        bool previousHashIsValid;
+        if (previousBlock != null)
+        {
+            previousHashIsValid = block.PreviousHash == previousBlock.Hash;
+        }
+        else
+        {
+            // For the genesis block, we can add a specific check if needed,
+            // e.g., ensuring PreviousHash is "0".
+            previousHashIsValid = block.PreviousHash == "0";
+        }
+
+        block.IsValid = mdcHashIsValid && hashIsValid && hashMeetsDifficulty && previousHashIsValid;
     }
 
     private bool MineBlock(Block block, CancellationToken token)
