@@ -138,4 +138,36 @@ public class AdminController : Controller
         logger.ZLogInformation($"Admin {(enable ? "enabled" : "disabled")} password restrictions for user: {dbUser.Id}");
         return RedirectToAction("Users");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> GrantFullAccess([FromForm] string? username)
+    {
+        return await ToggleFullAccess(username, true);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RevokeFullAccess([FromForm] string? username)
+    {
+        return await ToggleFullAccess(username, false);
+    }
+
+    private async Task<IActionResult> ToggleFullAccess(string? username, bool grant)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            logger.ZLogTrace($"Admin tried to grant/revoke full access without providing a username");
+            return BadRequest("Username is required");
+        }
+        var dbUser = await usersService.GetByUsernameAsync(username);
+        if (dbUser == null)
+        {
+            logger.ZLogTrace($"Admin tried to grant/revoke full access for a non-existing user: {username}");
+            return NotFound("User not found");
+        }
+
+        dbUser.HasFullAccess = grant;
+        await usersService.UpdateUserAndSaveAsync(dbUser);
+        logger.ZLogInformation($"Admin {(grant ? "granted" : "revoked")} full access for user: {dbUser.Id}");
+        return RedirectToAction("Users");
+    }
 }

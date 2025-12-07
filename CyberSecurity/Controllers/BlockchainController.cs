@@ -24,6 +24,12 @@ public class BlockchainController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddBlock([Bind(Prefix = "AddBlock")] AddBlockViewModel model)
     {
+        if (!User.IsInRole("FullAccess"))
+        {
+            TempData["ErrorMessage"] = "You do not have permission to add new transactions. Please contact the administrator to get full access.";
+            return RedirectToAction("Index");
+        }
+
         if (ModelState.IsValid && model != null)
         {
             var username = User.Identity?.Name ?? "anonymous";

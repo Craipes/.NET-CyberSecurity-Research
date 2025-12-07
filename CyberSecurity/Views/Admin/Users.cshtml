@@ -14,17 +14,19 @@
                     <span class="col-2">Username</span>
                     <span class="col-2">Admin?</span>
                     <span class="col-2">Registered?</span>
-                    <span class="col-2">Login Attempts</span>
-                    <span class="col-2">Password Restriction?</span>
-                    <span class="col-2">Blocked?</span>
+                    <span class="col-1">Logins</span>
+                    <span class="col-2">Pass Restriction?</span>
+                    <span class="col-1">Blocked?</span>
+                    <span class="col-2">Full Access?</span>
                 </div>
                 <div class="row mt-2">
                     <span class="col-2">@user.Username</span>
                     <span class="col-2">@user.HasAdminPrivileges</span>
                     <span class="col-2">@user.IsPasswordInitialized</span>
-                    <span class="col-2">@user.LoginAttemptsCount</span>
+                    <span class="col-1">@user.LoginAttemptsCount</span>
                     <span class="col-2">@user.PasswordRestrictionsEnabled</span>
-                    <span class="col-2">@user.IsBlocked</span>
+                    <span class="col-1">@user.IsBlocked</span>
+                    <span class="col-2">@user.HasFullAccess</span>
                 </div>
                 <div class="row mt-2 justify-content-end">
                     <div class="col-2">
@@ -43,7 +45,7 @@
                             </form>
                         }
                     </div>
-                    <div class="col-2">
+                    <div class="col-1">
                         @if (user.IsBlocked)
                         {
                             <form method="post" asp-action="UnblockUser" asp-asp-controller="Admin">
@@ -56,6 +58,22 @@
                             <form method="post" asp-action="BlockUser" asp-asp-controller="Admin">
                                 <input type="hidden" name="username" value="@user.Username" />
                                 <button type="submit" class="btn btn-danger w-100" @(user.HasAdminPrivileges ? "disabled" : "")>Block</button>
+                            </form>
+                        }
+                    </div>
+                    <div class="col-2">
+                        @if (user.HasFullAccess)
+                        {
+                            <form method="post" asp-action="RevokeFullAccess" asp-asp-controller="Admin">
+                                <input type="hidden" name="username" value="@user.Username" />
+                                <button type="submit" class="btn btn-danger w-100">Revoke</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="GrantFullAccess" asp-asp-controller="Admin">
+                                <input type="hidden" name="username" value="@user.Username" />
+                                <button type="submit" class="btn btn-success w-100">Grant</button>
                             </form>
                         }
                     </div>

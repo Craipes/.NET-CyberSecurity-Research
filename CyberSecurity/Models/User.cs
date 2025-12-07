@@ -10,4 +10,5 @@ public class User
     public int LoginAttemptsCount { get; set; }
     public bool IsBlocked { get; set; }
     public bool PasswordRestrictionsEnabled { get; set; }
+    public bool HasFullAccess { get; set; }
 }

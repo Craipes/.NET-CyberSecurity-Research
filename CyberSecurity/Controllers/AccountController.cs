@@ -183,6 +183,11 @@ public class AccountController : Controller
             claims.Add(new Claim(ClaimTypes.Role, "Admin"));
         }
 
+        if (dbUser.HasFullAccess)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "FullAccess"));
+        }
+
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
         await HttpContext.SignInAsync(new ClaimsPrincipal(claimsIdentity));
